@@ -7,11 +7,14 @@ HOW TO USE
      └── pdf_json
          ├─ 27f774dd62b31a5a4eea.json
          └── ...
-2. Check DB credentials at DB_AUTH_STRING
-3. Launch the script
+2. Check DB credentials at DB_AUTH_STRING (find string below)
+3. Launch the script, wait for 'Done' message in the log
+
+Call create_stripped_archive() to strip inital CORD-data
 """
 
 import os
+from shutil import copyfile
 import time
 from uuid import uuid4
 from datetime import datetime
@@ -24,7 +27,7 @@ class CordParser:
     Processing CORD files: loading, parsing and inserting to the DB
     """
 
-    DB_AUTH_STRING = "dbname='covid' user='covid' host='localhost' password='covid'"
+    DB_AUTH_STRING = "dbname='covid' user='covid_user' host='host_or_ip.com' port='5432' password='covid_pass'"
 
     def __init__(self, file_name):
         if not os.path.isfile(file_name):
@@ -43,6 +46,20 @@ class CordParser:
                 | self.df_vcf['title'].str.contains('covid', na=False, case=False) | self.df_vcf['title'].str.contains('sars-cov-2', na=False, case=False)) \
                 ]
         print(f'Found {self.df_vcf_sorted.shape[0]} relevant rows, it took {int(time.time() - start)} sec')
+
+    def create_stripped_archive(self, out_path):
+        if self.df_vcf_sorted == None:
+            self.sort_relevant_items()
+
+        print('Copying relevant articles to the new path...')
+        os.makedirs(out_path + '/' + 'document_parses', exist_ok=True)
+        os.makedirs(out_path + '/' + 'document_parses/pdf_json', exist_ok=True)
+        for article in self.df_vcf_sorted['pdf_json_files']:
+            copyfile(self.full_path + article.split(';')[0], out_path + '/' + article.split(';')[0])
+    
+        print('Copying stripped metadata to the new path...')
+        self.df_vcf_sorted.to_csv(out_path + '/' + 'metadata.csv')
+        print('Creating stripped archive done!')
 
     def put_relevant_items_to_db(self):
         if self.df_vcf_sorted == None:
@@ -93,5 +110,5 @@ class CordParser:
 
 if __name__ == '__main__':
     cord_parser_obj = CordParser('metadata.csv')
-    cord_parser_obj.get_metadata_info()
     cord_parser_obj.put_relevant_items_to_db()
+
