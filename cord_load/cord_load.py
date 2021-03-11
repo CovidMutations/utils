@@ -58,7 +58,7 @@ class CordParser:
             copyfile(self.full_path + article.split(';')[0], out_path + '/' + article.split(';')[0])
     
         print('Copying stripped metadata to the new path...')
-        self.df_vcf_sorted.to_csv(out_path + '/' + 'metadata.csv')
+        self.df_vcf_sorted.to_csv(out_path + '/' + 'metadata.csv', index = False)
         print('Creating stripped archive done!')
 
     def put_relevant_items_to_db(self):
@@ -102,7 +102,7 @@ class CordParser:
         cur.close()
         conn.close()
         print(f'DB operations took {int(time.time() - start)} sec')
-        print('Done!')
+        print('DB updating done!')
 
     def get_metadata_info(self):
         print('Total rows: ', self.df_vcf.shape[0])
